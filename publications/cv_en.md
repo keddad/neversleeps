@@ -1,6 +1,6 @@
 ---
 title: "CV, En"
-date: 2025-08-21
+date: 2025-09-24
 ---
 
 # Biryulin Nickita
@@ -8,13 +8,19 @@ date: 2025-08-21
 * keddad@yandex.ru
 * [github.com/keddad](https://github.com/keddad)
 * Telegram: [@keddad](https://t.me/keddad)
+* [neversleeps.moscow](https://neversleeps.moscow)
 
 ## Education
 * National Research University "Higher School of Economics", Software Engineering, 2025
 
 ## Work
+### VK, Developer
+* 2025 - Present time
+* Developed distributed microservices with Go
+* Transitioned legacy PHP code to microservices
+
 ### Kaspersky Lab, Software Engineer
-* 2022 - Present time
+* 2022 - 2025
 * Developed rules and toolchains for reproducible C/C++, .NET builds.
 *   Moved monorepo to Bazel (from CMake/MSBuild/etc).
     Centralized build with Bazel greatly reduced technical debt related to CI/CD systems.
@@ -24,8 +30,8 @@ date: 2025-08-21
 * Support of internal tooling written in C#/Go/Python.
 
 ## Skills
-* Python (FastAPI/SQLAlchemy/Flask/Scrapy)
-* C#/.NET
 * Go
-* SQL/NoSQL (Postgres/MongoDB/Redis/Influx), Git, Docker/Docker Compose, Linux
+* C#/.NET, Python
+* SQL/NoSQL (Postgres/MongoDB/Redis/Influx)
+* Git, Docker/Docker Compose, Linux, K8, Helm
 * CMake/Bazel/MSBuild
