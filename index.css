@@ -57,6 +57,19 @@ code {
     margin-bottom: 1em;
 }
 
+p {
+    margin: 0 0 1.5em 0;
+}
+
+ul, ol {
+    margin: 0 0 0.5em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin-bottom: 0.5em;
+}
+
 @media (max-width: 600px) {
     .profile {
         flex-direction: column;
