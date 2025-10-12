@@ -5,11 +5,12 @@ date: 2025-10-12
 
 # I wrote a parser for Redis protocol so you don't have to
 
-There are a lot of "Write your own Redis" guides online. The general idea is neat: you get to write a simple KV storage and a network interface for it in a guided fashion. You will work with network and file I\O, do some bytes encoding to support Redis wire protocol, write a simple data structure to hold your data. It's a nice way to get acquainted with a new language.
+There are a lot of "Write your own Redis" guides online. The general idea is neat: you get to write a simple KV storage and a network interface for it in a guided fashion. You will work with network and file I/O, do some bytes encoding to support Redis wire protocol, write a simple data structure to hold your data. It's a nice way to get acquainted with a new language.
 
 In this spirit, I decided to write my own Redis. To be honest, I just wanted to implement a Log-Structured Merge Tree, but it occurred to me that it would be nicer with an interactive interface, so I could use it from other software. My plan was simple: Redis is an established product, it's protocol (also called RESP - Redis Serialization Protocol) is well-documented and has to be relatively simple. Considering amount of "Redis-like" software out there, I expected to find a dozen different parsers to choose from. 
 
 However, I soon found out that this is not the case. At least for Go, there are a couple projects on Github, but they all share some of these properties:
+
 * Integrated into existing databases, so you can't just use them as a library
 * Archived 7 years ago
 * Have little to none testing
