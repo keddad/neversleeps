@@ -16,7 +16,7 @@ to - neversleeps.moscow</title>
   </header>
   <h1 id="i-wrote-a-parser-for-redis-protocol-so-you-dont-have-to">I
   wrote a parser for Redis protocol so you don't have to</h1>
-  <p>There are a lot of "Write your own Redis" guides online. The
+  <p>  There are a lot of "Write your own Redis" guides online. The
   general idea is neat: you get to write a simple KV storage and a
   network interface for it in a guided fashion. You will work with
   network and file I/O, do some bytes encoding to support Redis wire
@@ -32,14 +32,9 @@ to - neversleeps.moscow</title>
   expected to find a dozen different parsers to choose from.</p>
   <p>However, I soon found out that this is not the case. At least for
   Go, there are a couple projects on Github, but they all share some of
-  these properties:</p>
-  <ul>
-  <li>Integrated into existing databases, so you can't just use them as
-  a library</li>
-  <li>Archived 7 years ago</li>
-  <li>Have little to none testing</li>
-  <li>Don't implement half the specification</li>
-  </ul>
+  these properties: * Integrated into existing databases, so you can't
+  just use them as a library * Archived 7 years ago * Have little to
+  none testing * Don't implement half the specification</p>
   <p>In the end, I shelved the whole LSM Tree idea and decided to write
   a RESP parser/encoder. Should be easy, after all.</p>
   <h3 id="the-good">The good</h3>
@@ -62,10 +57,11 @@ to - neversleeps.moscow</title>
   <p>Finally, if you want to send an actual command to the server, you
   use an array. These are just a bunch of other RESP objects, along with
   their count. Simple Redis request can look like this: (in this and
-  other examples, newlines and tabs are added for readability)</p>
-  <pre><code>*2\r\n
-    +GET\r\n
-    +MYKEY\r\n</code></pre>
+  other examples, newlines, tabs and comments are added for
+  readability)</p>
+  <pre><code>*2\r\n         // Array of size 2
+    +GET\r\n   // Simple string
+    +MYKEY\r\n // Simple string</code></pre>
   <p>At first glance, all these objects are straightforward to
   implement. Using them you can easily build a nice KV interface. They
   are all part of RESP2 protocol, which has been supported by Redis and
@@ -77,11 +73,11 @@ to - neversleeps.moscow</title>
   <h4 id="resp3">RESP3</h4>
   <p>For one, now you have proper maps. They are pretty much as a
   sequence of Key-Value pairs. Simple and effective, I like it:</p>
-  <pre><code>%2\r\n
-    +foo\r\n
-    :0451\r\n
-    +bar\r\n
-    :4212\r\n</code></pre>
+  <pre><code>%2\r\n        // Map with 2 Key-Value pairs
+    +foo\r\n  // Key 1, Simple string
+    :0451\r\n // Value 1, Integer
+    +bar\r\n  // Key 2, Simple string
+    :4212\r\n // Value 2, Integer</code></pre>
   <p>You also get a double type, which you use to encode floating-point
   numbers. Nice stuff: <code>,33.77\r\n</code>. You also have all your
   usual shenanigans, like <code>,-inf\r\n</code> and
@@ -118,19 +114,17 @@ to - neversleeps.moscow</title>
   <h4 id="attributes">Attributes</h4>
   <p>RESP3 also adds "Attributes". These are essentially a Map type,
   except that those contain additional properties of an object. Here is
-  an official example:</p>
-  <pre><code>|1\r\n
-    +key-popularity\r\n
-    %2\r\n
-        $1\r\n
-        a\r\n
-        ,0.1923\r\n
-        $1\r\n
-        b\r\n
-        ,0.0012\r\n
-*2\r\n
-    :2039123\r\n
-    :9543892\r\n
+  an official example (!):</p>
+  <pre><code>|1\r\n                   // An Attribute map with 1 Key-Value Pair
+    +key-popularity\r\n  // Key: Simple String
+    %2\r\n               // Value: Map with 2 Key-Value pairs
+        $1\r\na\r\n      // Key 1: Bulk string &quot;a&quot;
+        ,0.1923\r\n      // Value 1: Float
+        $1\r\nb\r\n      // Key 2: Bulk string &quot;b&quot;
+        ,0.0012\r\n      // Value 2: Float
+*2\r\n                   // An Array of size 2, to which Attributes are applied
+    :2039123\r\n         // Integer
+    :9543892\r\n         // Integer
 </code></pre>
   <p>You have an array of two numbers, and this array has an attribute
   "key-popularity", which describes popularity of it's contents (why are
@@ -175,21 +169,21 @@ to - neversleeps.moscow</title>
   data:</p>
   <table>
   <thead>
-  <tr class="header">
+  <tr>
   <th>Data Type</th>
   <th>Representation</th>
   </tr>
   </thead>
   <tbody>
-  <tr class="odd">
+  <tr>
   <td>Array</td>
   <td><code>*2\r\n+FOO\r\n+BAR\r\n</code></td>
   </tr>
-  <tr class="even">
+  <tr>
   <td>Set</td>
   <td><code>~2\r\n+FOO\r\n+BAR\r\n</code></td>
   </tr>
-  <tr class="odd">
+  <tr>
   <td>Push</td>
   <td><code>&gt;2\r\n+FOO\r\n+BAR\r\n</code></td>
   </tr>
@@ -235,10 +229,10 @@ to - neversleeps.moscow</title>
   Their end is instead marked by a special object of type "END"
   (<code>.\r\n</code>). Looks simple enough, and can be useful in some
   applications. Example:</p>
-  <pre><code>*?\r\n
-    :1\r\n
-    :2\r\n
-    .\r\n</code></pre>
+  <pre><code>*?\r\n      // Array of undefined size
+    :1\r\n  // Integer
+    :2\r\n  // Integer
+    .\r\n   // END Type</code></pre>
   <p>Problem is, it's not properly documented. They are mentioned in
   official Redis RESP description, but they are not described there. In
   fact, I only learned about those when writing this text, because I
@@ -263,6 +257,7 @@ to - neversleeps.moscow</title>
   <li><a
   href="https://github.com/antirez/RESP3/blob/master/spec.md">RESP3
   Specification, antires/RESP3</a></li>
+  <li><a href="https://github.com/keddad/kresp">keddad/kresp</a></li>
   </ul>
 </body>
 </html>

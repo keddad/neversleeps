@@ -5,12 +5,12 @@ date: 2025-10-12
 
 # I wrote a parser for Redis protocol so you don't have to
 
+ 
 There are a lot of "Write your own Redis" guides online. The general idea is neat: you get to write a simple KV storage and a network interface for it in a guided fashion. You will work with network and file I/O, do some bytes encoding to support Redis wire protocol, write a simple data structure to hold your data. It's a nice way to get acquainted with a new language.
 
 In this spirit, I decided to write my own Redis. To be honest, I just wanted to implement a Log-Structured Merge Tree, but it occurred to me that it would be nicer with an interactive interface, so I could use it from other software. My plan was simple: Redis is an established product, it's protocol (also called RESP - Redis Serialization Protocol) is well-documented and has to be relatively simple. Considering amount of "Redis-like" software out there, I expected to find a dozen different parsers to choose from. 
 
 However, I soon found out that this is not the case. At least for Go, there are a couple projects on Github, but they all share some of these properties:
-
 * Integrated into existing databases, so you can't just use them as a library
 * Archived 7 years ago
 * Have little to none testing
@@ -27,12 +27,12 @@ For instance, encoding of string `MEOW` looks like this: `+MEOW\r\n`. `+` means 
 
 Some types have information about their length encoded. If you want to send some binary data, you have to use a "Bulk string" - you essentially tell your server that "Next n bytes of the message are data". Looks like `$8\r\nDEADBEEF\r\n`.
 
-Finally, if you want to send an actual command to the server, you use an array. These are just a bunch of other RESP objects, along with their count. Simple Redis request can look like this: (in this and other examples, newlines and tabs are added for readability)
+Finally, if you want to send an actual command to the server, you use an array. These are just a bunch of other RESP objects, along with their count. Simple Redis request can look like this: (in this and other examples, newlines, tabs and comments are added for readability)
 
 ```
-*2\r\n
-	+GET\r\n
-	+MYKEY\r\n
+*2\r\n         // Array of size 2
+	+GET\r\n   // Simple string
+	+MYKEY\r\n // Simple string
 ```
 
 At first glance, all these objects are straightforward to implement. Using them you can easily build a nice KV interface. They are all part of RESP2 protocol, which has been supported by Redis and it's clients for a while. But there are some nice-to-haves missing: there are no defined ways to send a floating-point number, or a map type. Thankfully, people at Redis thought about that and gave us RESP3. It's an extension of RESP2 which should solve most of it's drawbacks. 
@@ -40,11 +40,11 @@ At first glance, all these objects are straightforward to implement. Using them 
 #### RESP3
 For one, now you have proper maps. They are pretty much as a sequence of Key-Value pairs. Simple and effective, I like it:
 ```
-%2\r\n
-	+foo\r\n
-	:0451\r\n
-	+bar\r\n
-	:4212\r\n
+%2\r\n        // Map with 2 Key-Value pairs
+	+foo\r\n  // Key 1, Simple string
+	:0451\r\n // Value 1, Integer
+	+bar\r\n  // Key 2, Simple string
+	:4212\r\n // Value 2, Integer
 ```
 
 You also get a double type, which you use to encode floating-point numbers. Nice stuff: `,33.77\r\n`. You also have all your usual shenanigans, like `,-inf\r\n` and `,nan\r\n`.
@@ -63,20 +63,18 @@ You also get a proper Bool type. Looks nice: `#t\r\n`. The only problem is, Redi
 Speaking of integers: you now have "Big number" type. Same thing as "Integer", but now it can contain numbers bigger then `int64`: `(3492890328409238509324850943850943825024385\r\n`. Understandable solution to preserving backwards compatibility, but now you have two ways to send an integer.
 
 #### Attributes
-RESP3 also adds "Attributes". These are essentially a Map type, except that those contain additional properties of an object. Here is an official example:
+RESP3 also adds "Attributes". These are essentially a Map type, except that those contain additional properties of an object. Here is an official example (!):
 ```
-|1\r\n
-    +key-popularity\r\n
-    %2\r\n
-        $1\r\n
-        a\r\n
-        ,0.1923\r\n
-        $1\r\n
-        b\r\n
-        ,0.0012\r\n
-*2\r\n
-    :2039123\r\n
-    :9543892\r\n
+|1\r\n                   // An Attribute map with 1 Key-Value Pair
+    +key-popularity\r\n  // Key: Simple String
+    %2\r\n               // Value: Map with 2 Key-Value pairs
+        $1\r\na\r\n      // Key 1: Bulk string "a"
+        ,0.1923\r\n      // Value 1: Float
+        $1\r\nb\r\n      // Key 2: Bulk string "b"
+        ,0.0012\r\n      // Value 2: Float
+*2\r\n                   // An Array of size 2, to which Attributes are applied
+    :2039123\r\n         // Integer
+    :9543892\r\n         // Integer
 
 ```
 You have an array of two numbers, and this array has an attribute "key-popularity", which describes popularity of it's contents (why are those attributes attached to the array instead of integers itself? I have no idea, but this is not related to RESP-itself, so we will ignore it).
@@ -119,10 +117,10 @@ RESP3 aimed to fix this mistake, and added a separate "Null" type. Simple enough
 #### Streamed data types
 RESP3 introduces the concept of "Streamed type". Let's say you are doing some slow search, and want to stream the data to the user in real time. You don't know the amount of items to be returned yet, to you can't use normal arrays or strings. Instead, you use aggregate types: these are essentially just arrays with `?` as size. Their end is instead marked by a special object of type "END" (`.\r\n`). Looks simple enough, and can be useful in some applications. Example:
 ```
-*?\r\n
-	:1\r\n
-	:2\r\n
-	.\r\n
+*?\r\n      // Array of undefined size
+	:1\r\n  // Integer
+	:2\r\n  // Integer
+	.\r\n   // END Type
 ```
 
 Problem is, it's not properly documented. They are mentioned in official Redis RESP description, but they are not described there. In fact, I only learned about those when writing this text, because I stumbled on some docs published on GitHub which describe it.
@@ -137,3 +135,4 @@ If you still want to build something using RESP, and you are building it in Go, 
 
 * [Redis serialization protocol specification, Redis website](https://redis.io/docs/latest/develop/reference/protocol-spec/)
 * [RESP3 Specification, antires/RESP3](https://github.com/antirez/RESP3/blob/master/spec.md)
+* [keddad/kresp](https://github.com/keddad/kresp)
