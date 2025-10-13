@@ -4,13 +4,13 @@ date: 2025-10-12
 ---
 
 # I wrote a parser for Redis protocol so you don't have to
-
  
 There are a lot of "Write your own Redis" guides online. The general idea is neat: you get to write a simple KV storage and a network interface for it in a guided fashion. You will work with network and file I/O, do some bytes encoding to support Redis wire protocol, write a simple data structure to hold your data. It's a nice way to get acquainted with a new language.
 
 In this spirit, I decided to write my own Redis. To be honest, I just wanted to implement a Log-Structured Merge Tree, but it occurred to me that it would be nicer with an interactive interface, so I could use it from other software. My plan was simple: Redis is an established product, it's protocol (also called RESP - Redis Serialization Protocol) is well-documented and has to be relatively simple. Considering amount of "Redis-like" software out there, I expected to find a dozen different parsers to choose from. 
 
 However, I soon found out that this is not the case. At least for Go, there are a couple projects on Github, but they all share some of these properties:
+
 * Integrated into existing databases, so you can't just use them as a library
 * Archived 7 years ago
 * Have little to none testing
@@ -57,7 +57,7 @@ However, RESP3 also added a bunch of other types. Some of those are not very ele
 Remember Bulk Strings? You should use those in two cases: either your string contains raw bytes, or has a length big enough to warrant knowing it's size before parsing. RESP3 introduces Bulk *Errors*: `!3\r\nERR\r\n`. Official docs describe it as "combining purpose of simple errors with the expressive power of bulk strings". To me, it looks like a solution for a problem which shouldn't exist: errors are here to inform user about something going wrong, they shouldn't contain bytes or be excessive in size.
 
 #### Bools
-You also get a proper Bool type. Looks nice: `#t\r\n`. The only problem is, Redis needed to return True/False long before RESP3, so there was already an obvious solution to a lack of Boolean: integers. One is true, zero is false, simple enough. It's not even some kind of optimisation: "True" 4 bytes as RESP Boolean, and 4 bytes as RESP Integer (``:1\r\n``). So now you have two ways to express a boolean type, and for no good reason.
+You also get a proper Bool type. Looks nice: `#t\r\n`. The only problem is, Redis needed to return True/False long before RESP3, so there was already an obvious solution to a lack of Boolean: integers. One is true, zero is false, simple enough. It's not even some kind of optimisation: "True" is 4 bytes as RESP Boolean, and 4 bytes as RESP Integer (``:1\r\n``). So now you have two ways to express a boolean type, and for no good reason.
 
 #### Integers
 Speaking of integers: you now have "Big number" type. Same thing as "Integer", but now it can contain numbers bigger then `int64`: `(3492890328409238509324850943850943825024385\r\n`. Understandable solution to preserving backwards compatibility, but now you have two ways to send an integer.
@@ -85,20 +85,21 @@ Can you notice the issue? Normal RESP is parsed in a recursive fashion. You usua
 Another addition are "Verbatim strings". They are described as "similar to the bulk string, with the addition of providing a hint about the data's encoding". This sounds very nice: I've worked with old projects, where UTF-8 is mixed with other weird encodings, and having an ability to mark the encoding of a certain string would be very useful. 
 
 Let's look at the official example:  `=15\r\ntxt:Some string\r\n`. The `txt` part represents the text encoding. There are two problems with this approach:
+
 * Standard requires encoding be expressed in exactly 3 bytes. Encoding names are usually not 3 bytes (see: `utf8`, `win1251`).
 * Apparently, even if you were to cram your encoding name in this field, those are not actual encodings. Instead, this is a bit of information passed to the client to let it know how to present the data to the user. 
 
 So now you have another type of bulk string, which is supposed to have text encoding embedded. But instead of proper encoding, they are just putting an attribute describing how to best present this text. If only there were a special data type which would allow us to add additional attributes to objects! We could even call it [attributes](#Attributes).
 
 #### Sets and Pushes
-Another structures introduced are "Set" and "Push". Sets are, as expected, a collection of elements with no particular order which is guaranteed to only have unique elements. Pushes are a way to sidestep traditional request-response model and push some data from the client. Let's compare representations of these data types with some test data:
+Another structures introduced are "Set" and "Push". Sets are, as expected, a collection of elements with no particular order which is guaranteed to only have unique elements. Pushes are a way to sidestep traditional request-response model and push some data to the client. Let's compare representations of these data types with some test data:
 
 | Data Type | Representation           |
 | --------- | ------------------------ |
 | Array     | `*2\r\n+FOO\r\n+BAR\r\n` |
 | Set       | `~2\r\n+FOO\r\n+BAR\r\n` |
 | Push      | `>2\r\n+FOO\r\n+BAR\r\n` |
-Those are all arrays, just with different first byte! I can get the excuse for Pushes, but I can't fathom why would you use Sets. They express exactly the same information as Arrays. Protocol declares them to be unordered and unique, but this should be a property of the function which returns a set, and not one of the protocol itself. You can send non-ordered, unique data with arrays just fine. You can also try to mess the "set" ordering and see which applications break.
+Those are all arrays, just with different first byte! I can get the excuse for Pushes, but I can't fathom why would you use Sets. They express exactly the same information as Arrays. Protocol declares them to be unordered and unique, but this should be a property of the function which returns a set, and not one of the protocol itself. You can send non-ordered, unique data with arrays just fine. You can also try to mess the "set" ordering and see which applications break first.
 
 ---
 
@@ -112,7 +113,7 @@ Redis needed a way to express a "Nothingness", i.e. Null. When you fetch a key w
 That is how "Null bulk string" was created: a string of size -1 which represents null (`$-1\r\n`).
 But one type of null was not enough, so some commands might return "Null Array" instead, as you probably guessed, it's an array of size -1: `*-1\r\n`.
 
-RESP3 aimed to fix this mistake, and added a separate "Null" type. Simple enough: `_\r\n`. Problem is, other two types are still a part of the standard. Because one way to express nothingness is not enough, RESP had 3.
+RESP3 aimed to fix this mistake, and added a separate "Null" type. Simple enough: `_\r\n`. Problem is, other two types are still a part of the standard. Because one way to express nothingness is not enough, RESP has 3.
 
 #### Streamed data types
 RESP3 introduces the concept of "Streamed type". Let's say you are doing some slow search, and want to stream the data to the user in real time. You don't know the amount of items to be returned yet, to you can't use normal arrays or strings. Instead, you use aggregate types: these are essentially just arrays with `?` as size. Their end is instead marked by a special object of type "END" (`.\r\n`). Looks simple enough, and can be useful in some applications. Example:
