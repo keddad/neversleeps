@@ -15,4 +15,5 @@ author: Nickita Biryulin
 
 # Publications
 
+* [Building Zig binaries with Docker](publications/zig_docker.html)
 * [I wrote a parser for Redis protocol so you don't have to](publications/resp.html)

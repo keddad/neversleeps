@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Building Zig binaries with Docker - neversleeps.moscow</title>
+  <link rel="stylesheet" href="/index.css">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+</head>
+<body>
+  <header id="main-header">
+    <h1 class="title"><a href="/">neversleeps.moscow</a></h1>
+    <p class="author">by Nickita Biryulin</p>
+  </header>
+  <h1 id="building-zig-binaries-with-docker">Building Zig binaries with
+  Docker</h1>
+  <p>I've recently decided to learn Zig. It's a nice language, and
+  learning something new is always useful. I also believe that the best
+  way to learn something is by doing, so I've built a <a
+  href="https://github.com/keddad/saas">Sleep-As-A-Service</a> - a nice
+  and simple webservice.</p>
+  <p>A thing with webservices is that you usually build and run those
+  inside Docker. It's usually not a problem, something simple like
+  <code>FROM golang:1.25 AS builder</code> should suffice. So,
+  naturally, I googled "Zig docker". It turns out that Zig project makes
+  claims that <a href="https://github.com/ziglang/docker-zig">Zig makes
+  Docker irrelevant</a>, and asking about that on its subreddit leads to
+  a lot of people <a
+  href="https://www.reddit.com/r/Zig/comments/1hjvyyd/zig_docker_image_rant/">claiming</a>
+  you are doing something wrong if you are building Zig inside
+  containers.</p>
+  <p>This claim has some merits: Zig has a great toolchain which should
+  allow for easy (cross)compiling without the need for much tooling
+  installed. However, it often just makes sense to build your stuff in
+  Docker, even if you could do it without it. So, let's write a build
+  container for Zig from scratch.</p>
+  <h2 id="sensible-approach">Sensible approach</h2>
+  <p><code>zig</code> is a popular tool, and it's packaged with many
+  distributions. Since we are writing a Dockerfile, let's just grab a
+  fresh Alpine image and use that as a builder. Something like this
+  should work:</p>
+  <div class="sourceCode" id="cb1"><pre
+  class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> alpine:3.22.2 <span class="kw">AS</span> build</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apk</span> add zig</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># ...copy sources...</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">zig</span> build</span></code></pre></div>
+  <p>Great, that's all. It can build your code. All those Zig fans were
+  right, no image necessary. However, if it were the case, we wouldn't
+  be here, would we?</p>
+  <h2 id="not-so-sensible-approach">Not so sensible approach</h2>
+  <p>For some cases, it works just fine. However, Zig is still not
+  stable (at the time of writing, the most recent version is
+  <code>0.15.2</code>, which doesn't sound stable at all). That means
+  that you might need a specific compiler version for your project. And
+  that specific version might not be available in your distro's
+  repositories, either because it's too old, or it's too fresh. In fact,
+  that's what happened to me: a library I was using was developed
+  against the most recent Zig version, but the latest available at
+  stable Apline repository was <code>0.14.0</code>.</p>
+  <p>Well, that sucks. But surely, we can just download the binary
+  directly from Zig's website? To their credit, their compiler is pretty
+  much stand-alone: you only need <code>zig</code> binary and some
+  libraries distributed with it to compile code. Let's try doing
+  this:</p>
+  <div class="sourceCode" id="cb2"><pre
+  class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> alpine:3.22.2 <span class="kw">AS</span> build</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apk</span> add tar xz</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">wget</span> https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz <span class="at">-O</span> zig.tar.xz</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">tar</span> <span class="at">-xf</span> zig.tar.xz</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">mkdir</span> <span class="at">-p</span> /opt/zig/</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">cp</span> <span class="at">-r</span> zig-x86_64-0.15.2/<span class="pp">*</span> /opt/zig/</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co"># ...copy sources...</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">/opt/zig/zig</span> build</span></code></pre></div>
+  <p>That <em>should</em> work. Except that now we are hardcoding arch
+  and zig version in a couple of places. Also, Zig asks us to identify
+  ourselves when downloading stuff. So we'll add some ENVs - not great,
+  not terrible. That should be all, right? <strong>Wrong.</strong> It
+  turns out that Zig's website is <a
+  href="https://ziglang.org/download/community-mirrors/">"intentionally
+  hosted on a simple one-computer configuration"</a>, and no guarantees
+  whatsoever are provided. Instead, we should be downloading our stuff
+  from a set of community mirrors. However, their list is fetched from
+  ziglang.org, so that won't help you when it will go down. Fine, let's
+  use those instead. Should be simple:</p>
+  <div class="sourceCode" id="cb3"><pre
+  class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">wget</span> https://ziglang.org/download/community-mirrors.txt</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">wget</span> <span class="va">$(</span><span class="fu">shuf</span> <span class="at">-n</span> 1 ./community-mirrors.txt<span class="va">)</span>/zig-<span class="va">${HOST}</span>-<span class="va">${ZIG_VERSION}</span>.tar.xz<span class="pp">?</span>source=<span class="va">${PROJECT}</span> <span class="at">-O</span> zig.tar.xz</span></code></pre></div>
+  <p>Except it's not. It turns out that downloading random binaries from
+  the internet and executing them is a bad idea. To mitigate that, you
+  should also download a release signature, and verify it against Zig's
+  public key. So now you also have to install minisign, grab the
+  signature itself and do some checks:</p>
+  <div class="sourceCode" id="cb4"><pre
+  class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apk</span> add minisign</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">wget</span> <span class="va">$(</span><span class="fu">shuf</span> <span class="at">-n</span> 1 ./community-mirrors.txt<span class="va">)</span>/zig-<span class="va">${HOST}</span>-<span class="va">${ZIG_VERSION}</span>.tar.xz.minisig<span class="pp">?</span>source=<span class="va">${PROJECT}</span> <span class="at">-O</span> zig.tar.xz.minisig</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">minisign</span> <span class="at">-Vm</span> zig.tar.xz <span class="at">-x</span> zig.tar.xz.minisig <span class="at">-P</span> RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U</span></code></pre></div>
+  <p>And with that, you should have a way to get whatever version of Zig
+  you need into your container. Except those mirrors go down time to
+  time, so you have to bake in some retries - that shall be left as an
+  exercise to the reader.</p>
+  <h2 id="working-dockerfile">Working Dockerfile</h2>
+  <p>In the end, your Dockerfile might look something like this:</p>
+  <div class="sourceCode" id="cb5"><pre
+  class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> alpine:3.22.2 <span class="kw">AS</span> build</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Find those at https://ziglang.org/download/</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> HOST=x86_64-linux</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> ZIG_VERSION=0.15.2</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Used to identify downloader, set to something recognizable</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> PROJECT=my-amazing-pigeon-whatever</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apk</span> add tar xz minisign</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">wget</span> https://ziglang.org/download/community-mirrors.txt</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">wget</span> <span class="va">$(</span><span class="fu">shuf</span> <span class="at">-n</span> 1 ./community-mirrors.txt<span class="va">)</span>/zig-<span class="va">${HOST}</span>-<span class="va">${ZIG_VERSION}</span>.tar.xz<span class="pp">?</span>source=<span class="va">${PROJECT}</span> <span class="at">-O</span> zig.tar.xz</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">wget</span> <span class="va">$(</span><span class="fu">shuf</span> <span class="at">-n</span> 1 ./community-mirrors.txt<span class="va">)</span>/zig-<span class="va">${HOST}</span>-<span class="va">${ZIG_VERSION}</span>.tar.xz.minisig<span class="pp">?</span>source=<span class="va">${PROJECT}</span> <span class="at">-O</span> zig.tar.xz.minisig</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Public key from https://ziglang.org/download/</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">minisign</span> <span class="at">-Vm</span> zig.tar.xz <span class="at">-x</span> zig.tar.xz.minisig <span class="at">-P</span> RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">tar</span> <span class="at">-xf</span> zig.tar.xz</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">mkdir</span> <span class="at">-p</span> /opt/zig/</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">cp</span> <span class="at">-r</span> zig-<span class="va">${HOST}</span>-<span class="va">${ZIG_VERSION}</span>/<span class="pp">*</span> /opt/zig/</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">mkdir</span> <span class="at">-p</span> ~/build</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /root/build</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> build.zig build.zig.zon /root/build/</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> src/ /root/build/src/</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">/opt/zig/zig</span> build <span class="at">-Doptimize</span><span class="op">=</span>ReleaseSmall</span></code></pre></div>
+  <p>And with the exception of bad mirrors, it will work fine. Except it
+  is a hell of a lot harder then just running
+  <code>FROM zig:0.15.2 AS builder</code> for no good reason. Moreover,
+  normal people probably aren't doing all that. They will just grab an
+  archive link from Zig's website and bake it into their CI - no ENVs,
+  no mirrors, no signature checking. Secure, clean and robust solutions
+  should be the easiest ones to adapt. Rejecting established tools in
+  the name of ideological purity only leads to people rolling out their
+  own half-baked crutches.</p>
+  <p>If you faced the same problem - just use the example above, it
+  should work fine for your needs. If you are someone from Zig Software
+  Foundation, make the world (and your language developer experience) a
+  better place and publish some official Docker images - you will make
+  some people happier, and their CI more secure and robust.</p>
+</body>
+</html>
