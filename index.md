@@ -7,6 +7,7 @@ author: Nickita Biryulin
 
 * Software Engineer from Moscow, Russia
 * CV: [ru](publications/cv.html), [en](publications/cv_en.html)
+* keddad@neversleeps.moscow
 * I also take a lot of photos! [t.me/bronzesand](https://t.me/bronzesand)
 
 # Projects
