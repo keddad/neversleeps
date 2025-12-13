@@ -14,10 +14,15 @@ date: 2025-09-24
 * National Research University "Higher School of Economics", Software Engineering, 2025
 
 ## Work
-### VK, Developer
-* 2025 - Present time
-* Developed distributed microservices with Go
-* Transitioned legacy PHP code to microservices
+### Wildberries, Разработчик
+* 2025 - present time
+* Go, Postgres
+* Developed internal systems related to Trust and Safety
+
+### ВКонтакте, Разработчик
+* 2025
+* Go, PHP, Postgres, Kafka
+* Helped transition PHP monolith to Go microservices
 
 ### Kaspersky Lab, Software Engineer
 * 2022 - 2025
