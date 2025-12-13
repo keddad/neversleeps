@@ -7,7 +7,7 @@
     --medium-gray: #ddd;
     --dark-gray: #777;
 }
-        
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -71,6 +71,21 @@ li {
 }
 
 @media (max-width: 600px) {
+    /* --- START: Added for better mobile responsiveness --- */
+    body {
+        padding: 15px;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+        margin-top: 1.2rem;
+    }
+    /* --- END: Added for better mobile responsiveness --- */
+    
     .profile {
         flex-direction: column;
         text-align: center;
