@@ -8,6 +8,25 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: false });
+
+    (async () => {
+      // Handle Pandoc's default output for mermaid code blocks: <pre class="mermaid"><code>...</code></pre>
+      document.querySelectorAll('pre.mermaid > code').forEach((codeBlock) => {
+        const pre = codeBlock.parentNode;
+        const div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = codeBlock.textContent;
+        div.style.textAlign = 'center';
+        div.style.margin = '2rem 0';
+        pre.parentNode.replaceChild(div, pre);
+      });
+      await mermaid.run();
+    })();
+  </script>
 </head>
 <body>
   <header id="main-header">
