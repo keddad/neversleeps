@@ -19,7 +19,7 @@ This is the most surprising thing to me: somebody actually agreed to work on mak
 
 Once the systems were in place, the only thing slowing down the censorship was the political opposition. 
 Sadly, over time, most prominent figures ended up in jail, or emigration, or dead. 
-Once the war started, all bets were off: levels of repression increased greatly, and more and more pieces of the internet became blocked, including CDNs and big services like YouTube. Even more, under the guise of protecting people from drone attacks, whitelists were rolled out on mobile internet in most of the country. 
+Once the war started, all bets were off: levels of repression increased greatly, and more and more pieces of the internet became blocked, including CDNs and big services like YouTube. Even more, under the guise of protecting people from drone attacks, whitelists were rolled out on mobile internet in most of the country.
 Did nothing against the drones, but now the majority of the country doesn't have access to the internet: instead they can access a closed list of government-approved services. You can use (some) Russian services like maps and delivery, your banking works, you can chat through state-approved messengers and read state-approved media. People might not like this, but what are you gonna do, protest?
 
 ## Evolution of VPNs and anti-censorship tooling
@@ -56,7 +56,7 @@ sequenceDiagram
 This implementation was trivial to block:
 
 * VPN protocols can be easily identified. You don't even need DPI, in most cases people used default ports.
-* Machines were usually used only for traffic forwarding. With the exception of SSH, the VPN was the only service running. That can be detected with active probing.
+* VPSes were usually used only for traffic forwarding. With the exception of SSH, the VPN was the only service running. That can be detected with active probing.
 
 ### Level 2
 
@@ -131,7 +131,7 @@ This approach is much more reliable. It also helps that even if your exit node g
 However, a new attack vector emerges. Say your user just happens to have a government-approved messenger on their phone. When routed via VPN, it can get your exit node IP, leading to a block.
 
 Even if the messenger itself is not routed through VPN (most software nowadays supports per-app tunnelling), VPN clients are usually not written with an adversarial code running on client devices in mind.
-Many VPN clients [set up](https://habr.com/en/articles/1020080/) an authenticated SOCKS5 server when working. This government-approved application can detect it, connect to it and leak your exit node IP this way.
+Many VPN clients [set up](https://habr.com/en/articles/1020080/) an unauthenticated SOCKS5 server when working. This government-approved application can detect it, connect to it and leak your exit node IP this way.
 
 Another problem is whitelisting. Whitelists don't (yet) apply to DC-to-DC traffic, but they will limit ASes/IP ranges your residential clients can connect to, even if your bridge is in Russia.
 That means that your VPN might stop working entirely when whitelists are enabled. In some regions of Russia, that means all the time.
@@ -212,4 +212,4 @@ Even if simpler solutions work, you are better off jumping to more complex stuff
 
 Fun fact: in Russia, a lot of services pushed by the government as replacements for foreign platforms are developed by VK. 
 If you had the foresight that a war would start soon, leading to all their competitors getting blocked and them receiving a lot of government money, you could buy some shares in it.
-If you bought them 31 Jan, 2022, and sold these today, you'd lose 57% of your money, and that is before inflation.
+If you bought them 31 Jan, 2022, and sold these today, you'd lose 57% of your money, and that is before accounting for inflation.

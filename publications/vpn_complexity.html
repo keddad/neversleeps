@@ -127,7 +127,7 @@
   <ul>
   <li>VPN protocols can be easily identified. You don't even need DPI,
   in most cases people used default ports.</li>
-  <li>Machines were usually used only for traffic forwarding. With the
+  <li>VPSes were usually used only for traffic forwarding. With the
   exception of SSH, the VPN was the only service running. That can be
   detected with active probing.</li>
   </ul>
@@ -219,7 +219,7 @@
   usually not written with an adversarial code running on client devices
   in mind. Many VPN clients <a
   href="https://habr.com/en/articles/1020080/">set up</a> an
-  authenticated SOCKS5 server when working. This government-approved
+  unauthenticated SOCKS5 server when working. This government-approved
   application can detect it, connect to it and leak your exit node IP
   this way.</p>
   <p>Another problem is whitelisting. Whitelists don't (yet) apply to
@@ -339,6 +339,6 @@
   competitors getting blocked and them receiving a lot of government
   money, you could buy some shares in it. If you bought them 31 Jan,
   2022, and sold these today, you'd lose 57% of your money, and that is
-  before inflation.</p>
+  before accounting for inflation.</p>
 </body>
 </html>
