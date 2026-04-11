@@ -11,7 +11,26 @@
 
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: false });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose',
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      sequence: { 
+        useMaxWidth: true, 
+        actorMargin: 100, 
+        messageMargin: 40,
+        boxMargin: 10,
+        fontFamily: 'inherit'
+      },
+      gantt: { useMaxWidth: true },
+      themeVariables: {
+        fontSize: '18px',
+        actorFontSize: '18px',
+        noteFontSize: '16px',
+        messageFontSize: '16px'
+      }
+    });
 
     (async () => {
       // Handle Pandoc's default output for mermaid code blocks: <pre class="mermaid"><code>...</code></pre>
@@ -20,8 +39,6 @@
         const div = document.createElement('div');
         div.className = 'mermaid';
         div.textContent = codeBlock.textContent;
-        div.style.textAlign = 'center';
-        div.style.margin = '2rem 0';
         pre.parentNode.replaceChild(div, pre);
       });
       await mermaid.run();

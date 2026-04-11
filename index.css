@@ -70,6 +70,47 @@ li {
     margin-bottom: 0.5em;
 }
 
+hr {
+    margin: 2rem 0;
+    border: 0;
+    border-top: 1px solid var(--medium-gray);
+}
+
+.mermaid {
+    margin: 4rem -150px;
+    text-align: center;
+    background: transparent;
+    overflow: visible;
+}
+
+.mermaid svg {
+    width: 100% !important;
+    max-width: 1100px !important;
+    height: auto !important;
+}
+
+.mermaid text {
+    font-size: 16px !important;
+}
+
+.mermaid .actor {
+    font-size: 18px !important;
+}
+
+@media (max-width: 1140px) {
+    .mermaid {
+        margin-left: -20px;
+        margin-right: -20px;
+    }
+}
+
+@media (max-width: 840px) {
+    .mermaid {
+        margin-left: -20px;
+        margin-right: -20px;
+    }
+}
+
 @media (max-width: 600px) {
     /* --- START: Added for better mobile responsiveness --- */
     body {
