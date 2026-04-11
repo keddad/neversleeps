@@ -88,6 +88,7 @@ Let's look at the official example:  `=15\r\ntxt:Some string\r\n`. The `txt` par
 
 * Standard requires encoding be expressed in exactly 3 bytes. Encoding names are usually not 3 bytes (see: `utf8`, `win1251`).
 * Apparently, even if you were to cram your encoding name in this field, those are not actual encodings. Instead, this is a bit of information passed to the client to let it know how to present the data to the user. 
+ 
 
 So now you have another type of bulk string, which is supposed to have text encoding embedded. But instead of proper encoding, they are just putting an attribute describing how to best present this text. If only there were a special data type which would allow us to add additional attributes to objects! We could even call it [attributes](#Attributes).
 

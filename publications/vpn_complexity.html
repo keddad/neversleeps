@@ -123,11 +123,14 @@
     S-&gt;&gt;W: Fetch Data
     W--&gt;&gt;S: Data Response
     S--&gt;&gt;U: Encrypted Response</code></pre>
-  <p>This implementation was trivial to block: * VPN protocols can be
-  easily identified. You don't even need DPI, in most cases people used
-  default ports. * Machines were usually used only for traffic
-  forwarding. With the exception of SSH, the VPN was the only service
-  running. That can be detected with active probing.</p>
+  <p>This implementation was trivial to block:</p>
+  <ul>
+  <li>VPN protocols can be easily identified. You don't even need DPI,
+  in most cases people used default ports.</li>
+  <li>Machines were usually used only for traffic forwarding. With the
+  exception of SSH, the VPN was the only service running. That can be
+  detected with active probing.</li>
+  </ul>
   <h3 id="level-2">Level 2</h3>
   <p>This brings us to a second option, which requires just a bit more
   sophistication, but is much harder to reliably block. In fact, this
@@ -155,17 +158,20 @@
   (something like "this VPN sets this bit in this type of packet, and
   normal devices don't usually do that"). When these are discovered,
   mass bans can happen overnight.</p>
-  <p>However, you will still encounter issues with this approach: * You
-  are still running a lot of "weird" traffic. Moreover, you are running
-  it to the server outside of the country. This alone can cause your IP
-  to be blocked, or traffic to be throttled. * Exit node for all your
-  traffic is outside of the country. That means that a lot of local
-  services won't work, especially banks and government websites. * Your
-  enter node is your exit node. A service you are accessing can figure
-  out that your IP is from Netherlands, but you physically are in
+  <p>However, you will still encounter issues with this approach:</p>
+  <ul>
+  <li>You are still running a lot of "weird" traffic. Moreover, you are
+  running it to the server outside of the country. This alone can cause
+  your IP to be blocked, or traffic to be throttled.</li>
+  <li>Exit node for all your traffic is outside of the country. That
+  means that a lot of local services won't work, especially banks and
+  government websites.</li>
+  <li>Your enter node is your exit node. A service you are accessing can
+  figure out that your IP is from Netherlands, but you physically are in
   Russia. This information is <a
   href="https://www.rbc.ru/technology_and_media/02/04/2026/69ce5f9b9a7947408a421405">relayed</a>
-  to the censor, VPN gets blocked.</p>
+  to the censor, VPN gets blocked.</li>
+  </ul>
   <h3 id="level-3">Level 3</h3>
   <p>Let's add another server. You are connecting to a bridge in Russia,
   which then routes your traffic to exit node in Netherlands. Traffic

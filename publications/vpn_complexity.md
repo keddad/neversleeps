@@ -54,6 +54,7 @@ sequenceDiagram
 ```
 
 This implementation was trivial to block:
+
 * VPN protocols can be easily identified. You don't even need DPI, in most cases people used default ports.
 * Machines were usually used only for traffic forwarding. With the exception of SSH, the VPN was the only service running. That can be detected with active probing.
 
@@ -85,6 +86,7 @@ Note that sometimes detections for obfuscated protocols come up (something like 
 When these are discovered, mass bans can happen overnight.
 
 However, you will still encounter issues with this approach:
+
 * You are still running a lot of "weird" traffic. Moreover, you are running it to the server outside of the country. This alone can cause your IP to be blocked, or traffic to be throttled.
 * Exit node for all your traffic is outside of the country. That means that a lot of local services won't work, especially banks and government websites.
 * Your enter node is your exit node. A service you are accessing can figure out that your IP is from Netherlands, but you physically are in Russia. This information is [relayed](https://www.rbc.ru/technology_and_media/02/04/2026/69ce5f9b9a7947408a421405) to the censor, VPN gets blocked.
