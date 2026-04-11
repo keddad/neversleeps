@@ -16,5 +16,6 @@ author: Nickita Biryulin
 
 # Publications
 
+* [Punching through internet censorship in 2026](publications/vpn_complexity.html)
 * [Building Zig binaries with Docker](publications/zig_docker.html)
 * [I wrote a parser for Redis protocol so you don't have to](publications/resp.html)
