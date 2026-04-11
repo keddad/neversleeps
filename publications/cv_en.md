@@ -15,13 +15,13 @@ date: 2025-09-24
 * National Research University "Higher School of Economics", Software Engineering, 2025
 
 ## Work
-### Wildberries, Разработчик
+### Wildberries, Software Engineer
 
 * 2025 - present time
 * Go, Postgres
 * Developed internal systems related to Trust and Safety
 
-### ВКонтакте, Разработчик
+### VK, Software Engineer
 
 * 2025
 * Go, PHP, Postgres, Kafka
